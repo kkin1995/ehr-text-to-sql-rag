@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "medeva llm internship"
+version = "0.1.0"
+description = ""
+authors = ["kkin1995"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+jupyter = "^1.0.0"
+numpy = "^1.26.4"
+pandas = "^2.2.1"
+clickhouse-connect = "^0.7.2"
+openai = "^1.14.1"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
