@@ -65,7 +65,7 @@ class LLMQueryHandler:
                 {"role": "user", "content": user_prompt},
             ],
         )
-        return completion.choices[0].message
+        return completion.choices[0].message.content
 
     @staticmethod
     def _create_system_prompt(schemas):
@@ -112,8 +112,9 @@ if __name__ == "__main__":
     user_prompt = """
     How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?
     """
-
-    handler = LLMQueryHandler(pinecone_api_key, openai_api_key, model="gpt-3.5-turbo")
+    # gpt_model = "gpt-3.5-turbo""
+    gpt_model = "gpt-4-0125-preview"
+    handler = LLMQueryHandler(pinecone_api_key, openai_api_key, model=gpt_model)
     schemas = handler.get_semantic_schemas(user_prompt)
     sql_query = handler.generate_sql_query(schemas, user_prompt)
 
