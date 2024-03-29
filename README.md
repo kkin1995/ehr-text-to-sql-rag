@@ -8,5 +8,8 @@ This project is designed to automate the conversion of natural language text que
 
 ## Contributions
 1. Clone the repository.
-2. Install the required dependencies from the `pyproject.toml` and `poetry.lock` files.
+2. Install the required dependencies. This project uses [Poetry](https://python-poetry.org) for dependency management.
+```sh
+poetry install
+```
 3. Set up a `.env` file with your `PINECONE_SERVERLESS_API_KEY` and `OPENAI_API_KEY`.
