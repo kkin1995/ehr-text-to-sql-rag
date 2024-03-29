@@ -1,6 +1,6 @@
 # Retrieval Augmented Generation (RAG) Model for generating SQL queries from text
 
-This project is designed to automate the conversion of natural language text queries into SQL statements, utilizing vector databases and Large Language Models (LLMs) like OpenAI's GPT-4. It is aimed at simplifying data retrival from databases, parrticularly Electronic Health Record (EHR) systems, by translating user-friendly queries into structured SQL queries. This project is an ongoing development and might change significantly in the near future.
+This project is designed to automate the conversion of natural language text queries into SQL statements, utilizing vector databases and Large Language Models (LLMs) like OpenAI's GPT-4. It is aimed at simplifying data retrieval from databases, particularly Electronic Health Record (EHR) systems, by translating user-friendly queries into structured SQL queries. This project is an ongoing development and might change significantly in the near future.
 
 ## Current Features
 - LLM Query Handler: A Python class that interfaces with the Pinecone vector database and a OpenAI LLM to generate SQL queries from natural language input.

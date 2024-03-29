@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 
 class LLMQueryHandler:
     """
-    A handler class for queryin vector databases and generating SQL queries from natural language prompts using a Large Language Model (LLM).
+    A handler class for querying vector databases and generating SQL queries from natural language prompts using a Large Language Model (LLM).
     It essntially creates a RAG (Retrieval Augmented Generation) algorithm.
 
     Parameters:
@@ -29,7 +29,7 @@ class LLMQueryHandler:
         self.openai_api_key = openai_api_key
         self.model = model
         self.index_name = index_name
-        self.client = OpenAI(api_key=openai_api_key)
+        self.client = OpenAI(api_key=self.openai_api_key)
 
     def get_semantic_schemas(self, user_prompt: str) -> list[str]:
         """
@@ -51,7 +51,9 @@ class LLMQueryHandler:
         )
         return [node.get_text() for node in nodes]
 
-    def generate_sql_query(self, schemas: list[str], user_prompt: str) -> dict:
+    def generate_sql_query(
+        self, schemas: list[str], user_prompt: str, system_prompt: str = None
+    ) -> dict:
         """
         Generates an SQL query from a list of semantic schemas and a user prompt using the specified LLM model.
 
@@ -59,12 +61,14 @@ class LLMQueryHandler:
         ----
         schemas (list[str]): The list of semantic schemas related to the user's query.
         user_prompt (str): The user's query in natural language.
+        system_prompt (str): The prompt used in the "system" of the LLM.
 
         Returns:
         ----
         output (dict): Python dictionary containing SQL_QUERY, MODEL, N_PROMPT_TOKENS, N_GENERATED_TOKENS.
         """
-        system_prompt = self._create_system_prompt(schemas)
+        if system_prompt == None:
+            system_prompt = self._create_system_prompt(schemas)
         completion = self.client.chat.completions.create(
             model=self.model,
             messages=[
