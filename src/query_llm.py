@@ -17,11 +17,12 @@ class LLMQueryHandler:
     index_name (str, optional): The name of the index within the vector database.
     """
 
-    def __init__(self, model: str, vector_store: str, index_name: str = None):
+    def __init__(self, model: str, vector_store: str, index_name: str = None, top_k=5):
         self.pinecone_api_key, self.openai_api_key = check_and_get_api_keys()
         self.model = model
         self.vector_store = vector_store
         self.index_name = index_name
+        self.top_k = top_k
         self.client = OpenAI(api_key=self.openai_api_key)
 
     def get_semantic_schemas(self, user_prompt: str) -> list[str]:
@@ -40,6 +41,7 @@ class LLMQueryHandler:
             query=user_prompt,
             vector_store=self.vector_store,
             index_name=self.index_name,
+            top_k=self.top_k,
         )
         return [node.get_text() for node in nodes]
 
@@ -94,22 +96,33 @@ class LLMQueryHandler:
         str: A detailed system prompt including instructions for generating SQL queries.
         """
         return f"""
-        Your task is to convert a doctor's natural language query into a specific SQL query, leveraging the schema of an Electronic Health Record (EHR) system's database.
-        This process involves understanding the intent and the details of the doctor's request and accurately mapping it to a SQL query that interacts with the EHR database schema to retrive the desired information.
-        Follow these steps:
-
-        1. Understand the EHR Database Schema: Begin with a thorough analysis of the provided EHR system's SQL database schema. Pay close attention to the tables, columns, relationships, and data types to understandd how the database stores and relates medical data.
-        It is important to note that some required information, such as the age of patients, may not be directly stored in the database and may need to be derived from available data.
-        2. Translate Natural Language to SQL: Convert the doctor's natural languagge query into a SQL query. This step requires interpreting medical terminology and query intent. You must construct a SQL statement that accurately targets the relevant data within the EHR system, using only columnns and relationships
-        defined in the schema. If you need to calculate any data, you must calculate it using the appropiate SQL functions and you must only use the available columns.
-        3. Ensure SQL Query Accuracy and Efficiency: The SQL query you generate should not only accurately reflect the doctor's request but also be optimized for effiecient execution. Consider the best practices for query performance, such as selecting only necessary columns and using appropriate JOINs, and calculatingg derived values correctly.
-        4. Prepare for Iterative Refinement: Anticipate the need for adjustments. Based on feedback or further clarifications, be ready to refine your SQL query to better match the doctor's informaion needs or to accomodate any additional insights about the database schema. Especially focus on correcting any assumptions about direct versus derived data.
-
-        Output: In you output, you should only give the SQL query. Do not give any more information or text in addition to the SQL query.
-
         SQL Schema:
 
         {schemas}
+
+        As a expert data scientist specialising in the medical field, your task is to convert 
+        a doctor’s natural language query into a specific SQL query that will be run on a 
+        SQL database to fetch data to answer the doctor’s query. You have to use the schema 
+        of an Electronic Health Record (EHR) system’s database. Your role requires a deep understanding 
+        of the database schema, and the ability to accurately interpret medical terminology and query 
+        intent.
+
+        Begin by thoroughly analysing the provided schema of the EHR system. The schema given in this message has been 
+        pre-determined to be the most important for the doctor’s query you are about to analyse. 
+        Identify the key attributes requested by the doctor in the query. Be mindful of attributes 
+        requested by the doctor which are not directly available in the database. For example, the 
+        patient’s age is not directly available and needs to be calculated from the patient’s birth 
+        dates.
+
+        The SQL query you generate should not only accurately reflect the doctor's request but also 
+        be optimized for efficient execution. Consider the best practices for query performance, 
+        such as selecting only necessary columns and using appropriate JOINs, and calculating 
+        derived values correctly.
+
+        Output:
+
+        Your output should consist solely of the SQL query ready to be executed on the database. 
+        Do not give any more information or text in addition to the SQL query.
         """
 
     def calculate_query_execution_cost(
@@ -161,13 +174,14 @@ class LLMQueryHandler:
 
 
 if __name__ == "__main__":
-    user_prompt = """
-    How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?
-    """
+    # user_prompt = """
+    # How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?
+    # """
+    user_prompt = "Can you list all past and current medical conditions for a given patient, including dates of diagnosis and resolution, if applicable?"
     vector_store = "weaviate"
-    gpt_model = "gpt-3.5-turbo-0125"
-    # gpt_model = "gpt-4-0125-preview"
-    handler = LLMQueryHandler(model=gpt_model, vector_store=vector_store)
+    # gpt_model = "gpt-3.5-turbo-0125"
+    gpt_model = "gpt-4-0125-preview"
+    handler = LLMQueryHandler(model=gpt_model, vector_store=vector_store, top_k=3)
     schemas = handler.get_semantic_schemas(user_prompt)
     output = handler.generate_sql_query(schemas, user_prompt)
 
@@ -176,4 +190,13 @@ if __name__ == "__main__":
     )
 
     print(f"SQL Query: \n\n {output['SQL_QUERY']}")
-    print(f"Cost = ${cost:.2f}")
+    print("--------------------------------")
+    for idx, schema in enumerate(schemas):
+        print(idx)
+        print("--------------------------------")
+        print(schema)
+    print("--------------------------------")
+    print(f"Cost = ${cost:.5f}")
+    print(f"Model: {output['MODEL']}")
+    print(f"Number of Prompt Tokens: {output['N_PROMPT_TOKENS']}")
+    print(f"Number of Generated Tokens: {output['N_GENERATED_TOKENS']}")
