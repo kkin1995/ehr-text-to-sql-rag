@@ -9,7 +9,7 @@ from pinecone import Pinecone, ServerlessSpec
 import weaviate
 from dotenv import load_dotenv
 import os
-from utils import check_valid_vector_store
+from utils import check_valid_vector_store, check_and_get_api_keys
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -215,15 +215,7 @@ def create_database(
             f"{vector_store_name} is  not supported. Currently supported: 'pinecone' or 'weaviate'"
         )
 
-    load_dotenv()
-    pinecone_api_key = os.environ.get("PINECONE_API_KEY")
-    if pinecone_api_key is None:
-        raise ValueError(
-            "PINECONE_API_KEY must be specified as an environment variable."
-        )
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
-    if openai_api_key is None:
-        raise ValueError("OPENAI_API_KEY must be specified as an environment variable.")
+    pinecone_api_key, openai_api_key = check_and_get_api_keys()
 
     vector_store = initialize_vector_store(
         vector_store_name, pinecone_api_key, pinecone_config, index_name

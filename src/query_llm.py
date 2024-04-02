@@ -1,6 +1,7 @@
 from openai import OpenAI
 from query_vector_database import query_database
 import logging
+from utils import check_and_get_api_keys
 
 logging.basicConfig(level=logging.INFO)
 
@@ -12,27 +13,15 @@ class LLMQueryHandler:
 
     Parameters:
     ----
-    pinecone_api_key (str): API key for accessing the Pinecone vector database.
-    openai_api_key (str): API key for accessing OpenAI's models.
     model (str): The name of the model to use for generating SQL queries.
-    index_name (str): The name of the index within the Pinecone vector database.
+    index_name (str, optional): The name of the index within the vector database.
     """
 
-    def __init__(
-        self,
-        pinecone_api_key: str,
-        openai_api_key: str,
-        model: str,
-        vector_store: str,
-        pinecone_index_name: str = "schema-index",
-        weaviate_index_name: str = "SchemaIndex",
-    ):
-        self.pinecone_api_key = pinecone_api_key
-        self.openai_api_key = openai_api_key
+    def __init__(self, model: str, vector_store: str, index_name: str = None):
+        self.pinecone_api_key, self.openai_api_key = check_and_get_api_keys()
         self.model = model
         self.vector_store = vector_store
-        self.pinecone_index_name = pinecone_index_name
-        self.weaviate_index_name = weaviate_index_name
+        self.index_name = index_name
         self.client = OpenAI(api_key=self.openai_api_key)
 
     def get_semantic_schemas(self, user_prompt: str) -> list[str]:
@@ -50,10 +39,7 @@ class LLMQueryHandler:
         nodes = query_database(
             query=user_prompt,
             vector_store=self.vector_store,
-            pinecone_index_name=self.pinecone_index_name,
-            pinecone_api_key=self.pinecone_api_key,
-            weaviate_index_name=self.weaviate_index_name,
-            openai_api_key=self.openai_api_key,
+            index_name=self.index_name,
         )
         return [node.get_text() for node in nodes]
 
@@ -175,23 +161,13 @@ class LLMQueryHandler:
 
 
 if __name__ == "__main__":
-    import os
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
-    pinecone_api_key = os.environ.get("PINECONE_SERVERLESS_API_KEY")
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
-
     user_prompt = """
     How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?
     """
     vector_store = "weaviate"
     gpt_model = "gpt-3.5-turbo-0125"
     # gpt_model = "gpt-4-0125-preview"
-    handler = LLMQueryHandler(
-        pinecone_api_key, openai_api_key, model=gpt_model, vector_store=vector_store
-    )
+    handler = LLMQueryHandler(model=gpt_model, vector_store=vector_store)
     schemas = handler.get_semantic_schemas(user_prompt)
     output = handler.generate_sql_query(schemas, user_prompt)
 
@@ -199,5 +175,5 @@ if __name__ == "__main__":
         gpt_model, output["N_PROMPT_TOKENS"], output["N_GENERATED_TOKENS"]
     )
 
-    print(output)
-    print(f"Cost = ${cost}")
+    print(f"SQL Query: \n\n {output['SQL_QUERY']}")
+    print(f"Cost = ${cost:.2f}")
