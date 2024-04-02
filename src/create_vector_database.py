@@ -1,13 +1,28 @@
 from llama_index.core import Document
-from llama_index.core.node_parser import SimpleNodeParser
+from llama_index.core.schema import TransformComponent
+from llama_index.core.ingestion import IngestionPipeline
 from pinecone import Pinecone, ServerlessSpec
 from llama_index.vector_stores.pinecone import PineconeVectorStore
-from llama_index.core import GPTVectorStoreIndex, StorageContext, ServiceContext
+from llama_index.core import VectorStoreIndex
 from llama_index.embeddings.openai import OpenAIEmbedding
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class SchemaParser(TransformComponent):
+    def __call__(self, docs: list[Document], **kwargs) -> list[Document]:
+        processed_docs = []
+        for doc in docs:
+            schemas = doc.text.split("&")
+            for idx, schema in enumerate(schemas):
+                title = schema.split(" ")[2]
+                processed_doc = Document(
+                    text=schema, doc_id=idx, extra_info={"title": title}
+                )
+                processed_docs.append(processed_doc)
+        return processed_docs
 
 
 def create_database(
@@ -56,33 +71,29 @@ def create_database(
         logging.info("Vector Index Already Exists")
         pc_index = pc.Index(name=index_name)
 
+    vector_store = PineconeVectorStore(
+        pinecone_index=pc_index, index_name=index_name, api_key=pinecone_api_key
+    )
+    pipeline = IngestionPipeline(
+        transformations=[
+            SchemaParser(),
+            OpenAIEmbedding(
+                model=model, api_key=openai_api_key, embed_batch_size=embed_batch_size
+            ),
+        ],
+        vector_store=vector_store,
+    )
+
     with open(
         file_path,
         "r",
     ) as f:
         text = f.read()
-    schemas = text.split("&")
-    for i in range(len(schemas)):
-        print(schemas[i].split(" ")[2])
 
-    docs = []
-    for i, schema in enumerate(schemas):
-        docs.append(
-            Document(text=schema, doc_id=i, extra_info={"title": schema.split(" ")[2]})
-        )
+    initial_docs = [Document(text=text)]
+    docs = pipeline.run(documents=initial_docs)
 
-    # Set Up Embedding and Index
-    vector_store = PineconeVectorStore(
-        pinecone_index=pc_index, index_name=index_name, api_key=pinecone_api_key
-    )
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    embed_model = OpenAIEmbedding(
-        model=model, embed_batch_size=embed_batch_size, api_key=openai_api_key
-    )
-    service_context = ServiceContext.from_defaults(embed_model=embed_model)
-    index = GPTVectorStoreIndex.from_documents(
-        docs, storage_context=storage_context, service_context=service_context
-    )
+    index = VectorStoreIndex.from_vector_store(vector_store)
 
     return index
 
