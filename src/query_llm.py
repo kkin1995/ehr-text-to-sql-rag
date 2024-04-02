@@ -23,12 +23,16 @@ class LLMQueryHandler:
         pinecone_api_key: str,
         openai_api_key: str,
         model: str,
-        index_name: str = "schema-index",
+        vector_store: str,
+        pinecone_index_name: str = "schema-index",
+        weaviate_index_name: str = "SchemaIndex",
     ):
         self.pinecone_api_key = pinecone_api_key
         self.openai_api_key = openai_api_key
         self.model = model
-        self.index_name = index_name
+        self.vector_store = vector_store
+        self.pinecone_index_name = pinecone_index_name
+        self.weaviate_index_name = weaviate_index_name
         self.client = OpenAI(api_key=self.openai_api_key)
 
     def get_semantic_schemas(self, user_prompt: str) -> list[str]:
@@ -45,8 +49,10 @@ class LLMQueryHandler:
         """
         nodes = query_database(
             query=user_prompt,
-            index_name="schema-index",
+            vector_store=self.vector_store,
+            pinecone_index_name=self.pinecone_index_name,
             pinecone_api_key=self.pinecone_api_key,
+            weaviate_index_name=self.weaviate_index_name,
             openai_api_key=self.openai_api_key,
         )
         return [node.get_text() for node in nodes]
@@ -180,9 +186,12 @@ if __name__ == "__main__":
     user_prompt = """
     How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?
     """
-    gpt_model = "gpt-4-1106-preview"
+    vector_store = "weaviate"
+    gpt_model = "gpt-3.5-turbo-0125"
     # gpt_model = "gpt-4-0125-preview"
-    handler = LLMQueryHandler(pinecone_api_key, openai_api_key, model=gpt_model)
+    handler = LLMQueryHandler(
+        pinecone_api_key, openai_api_key, model=gpt_model, vector_store=vector_store
+    )
     schemas = handler.get_semantic_schemas(user_prompt)
     output = handler.generate_sql_query(schemas, user_prompt)
 
