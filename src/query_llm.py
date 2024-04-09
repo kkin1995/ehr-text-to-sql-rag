@@ -102,7 +102,7 @@ class LLMQueryHandler:
 
         As a expert data scientist specialising in the medical field, your task is to convert 
         a doctor’s natural language query into a specific SQL query that will be run on a 
-        SQL database to fetch data to answer the doctor’s query. You have to use the schema 
+        SQLite3 database to fetch data to answer the doctor’s query. You have to use the schema 
         of an Electronic Health Record (EHR) system’s database. Your role requires a deep understanding 
         of the database schema, and the ability to accurately interpret medical terminology and query 
         intent.
@@ -117,11 +117,14 @@ class LLMQueryHandler:
         The SQL query you generate should not only accurately reflect the doctor's request but also 
         be optimized for efficient execution. Consider the best practices for query performance, 
         such as selecting only necessary columns and using appropriate JOINs, and calculating 
-        derived values correctly.
+        derived values correctly. The SQL query should conform to the SQLite3 standard.
+
+        In any SQL statement that uses WHERE clauses, do not use the equals (=) operator, instead use the LIKE
+        command with the wildcard operator.
 
         Output:
 
-        Your output should consist solely of the SQL query ready to be executed on the database. 
+        Your output should consist solely of the SQL query ready to be executed on the SQLite3 database. 
         Do not give any more information or text in addition to the SQL query.
         """
 
@@ -179,8 +182,8 @@ if __name__ == "__main__":
     # """
     user_prompt = "Can you list all past and current medical conditions for a given patient, including dates of diagnosis and resolution, if applicable?"
     vector_store = "weaviate"
-    # gpt_model = "gpt-3.5-turbo-0125"
-    gpt_model = "gpt-4-0125-preview"
+    gpt_model = "gpt-3.5-turbo-0125"
+    # gpt_model = "gpt-4-0125-preview"
     handler = LLMQueryHandler(model=gpt_model, vector_store=vector_store, top_k=3)
     schemas = handler.get_semantic_schemas(user_prompt)
     output = handler.generate_sql_query(schemas, user_prompt)

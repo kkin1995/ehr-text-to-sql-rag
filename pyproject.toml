@@ -10,7 +10,6 @@ python = ">=3.11,<3.13"
 jupyter = "^1.0.0"
 numpy = "^1.26.4"
 pandas = "^2.2.1"
-clickhouse-connect = "^0.7.2"
 openai = "^1.14.1"
 python-dotenv = "^1.0.1"
 langchain = "^0.1.13"
@@ -19,7 +18,6 @@ llama-index = "^0.10.23"
 llama-index-vector-stores-pinecone = "^0.1.4"
 weaviate-client = ">=3.26.2,<4.0.0"
 llama-index-vector-stores-weaviate = "^0.1.4"
-
 
 [build-system]
 requires = ["poetry-core"]
