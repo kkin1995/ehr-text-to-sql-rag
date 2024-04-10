@@ -46,6 +46,22 @@ class DynamicPathFileHandler(logging.FileHandler):
         super().emit(record)
 
 
+def setup_logger(name=__name__):
+    LOG_DIR = os.environ.get("LOG_DIR")
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+
+    handler = DynamicPathFileHandler(directory=LOG_DIR, filename=".log")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+
+    return logger
+
+
 def sanitize_filename(input_str):
     return re.sub(r"[^a-zA-Z0-9_]", "_", input_str)
 
