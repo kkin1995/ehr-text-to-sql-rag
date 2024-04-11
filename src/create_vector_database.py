@@ -246,7 +246,7 @@ def create_database(
 
 
 if __name__ == "__main__":
-    file_path = "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/context_1.txt"
+    file_path = "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/schemas_1.txt"
     vector_store_name = "weaviate"
     pinecone_config = {
         "metric": "cosine",

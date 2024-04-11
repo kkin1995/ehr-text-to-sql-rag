@@ -46,7 +46,11 @@ class LLMQueryHandler:
         return [node.get_text() for node in nodes]
 
     def generate_sql_query(
-        self, schemas: list[str], user_prompt: str, system_prompt: str = None
+        self,
+        schemas: list[str],
+        user_prompt: str,
+        context: str = None,
+        system_prompt: str = None,
     ) -> dict:
         """
         Generates an SQL query from a list of semantic schemas and a user prompt using the specified LLM model.
@@ -62,7 +66,7 @@ class LLMQueryHandler:
         output (dict): Python dictionary containing SQL_QUERY, MODEL, N_PROMPT_TOKENS, N_GENERATED_TOKENS.
         """
         if system_prompt == None:
-            system_prompt = self._create_system_prompt(schemas)
+            system_prompt = self._create_system_prompt(schemas, context)
         completion = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -83,7 +87,7 @@ class LLMQueryHandler:
         return output
 
     @staticmethod
-    def _create_system_prompt(schemas: list[str]) -> str:
+    def _create_system_prompt(schemas: list[str], context: str) -> str:
         """
         Creates a detailed system prompt for the LLM based on the provided schemas.
 
@@ -100,35 +104,7 @@ class LLMQueryHandler:
 
         {schemas}
 
-        As a expert data scientist specialising in the medical field, your task is to convert 
-        a doctor’s natural language query into a specific SQL query that will be run on a 
-        SQLite3 database to fetch data to answer the doctor’s query. You have to use the schema 
-        of an Electronic Health Record (EHR) system’s database. Your role requires a deep understanding 
-        of the database schema, and the ability to accurately interpret medical terminology and query 
-        intent.
-
-        Begin by thoroughly analysing the provided schema of the EHR system. The schema given in this message has been 
-        pre-determined to be the most important for the doctor’s query you are about to analyse. 
-        Identify the key attributes requested by the doctor in the query. Be mindful of attributes 
-        requested by the doctor which are not directly available in the database. For example, the 
-        patient’s age is not directly available and needs to be calculated from the patient’s birth 
-        dates.
-
-        The SQL query you generate should not only accurately reflect the doctor's request but also 
-        be optimized for efficient execution. Consider the best practices for query performance, 
-        such as selecting only necessary columns and using appropriate JOINs, and calculating 
-        derived values correctly. The SQL query should conform to the SQLite3 standard.
-
-        Here are some general SQL guidelines:
-
-        - In any SQL statement that uses WHERE clauses, do not use the equals (=) operator, instead use the LIKE
-        command with the wildcard operator.
-        - In any SQL statement that uses JOIN clauses, do not use the the LIKE operator, instead use the equals (=) operator.
-
-        Output:
-
-        Your output should consist solely of the SQL query ready to be executed on the SQLite3 database. 
-        Do not give any more information or text in addition to the SQL query.
+        {context}
         """
 
     def calculate_query_execution_cost(
@@ -188,9 +164,15 @@ if __name__ == "__main__":
     vector_store = "weaviate"
     gpt_model = "gpt-3.5-turbo-0125"
     # gpt_model = "gpt-4-0125-preview"
+
+    with open(
+        "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/context.txt"
+    ) as f:
+        context_prompt = f.read()
+
     handler = LLMQueryHandler(model=gpt_model, vector_store=vector_store, top_k=3)
     schemas = handler.get_semantic_schemas(user_prompt)
-    output = handler.generate_sql_query(schemas, user_prompt)
+    output = handler.generate_sql_query(schemas, user_prompt, context=context_prompt)
 
     cost = handler.calculate_query_execution_cost(
         gpt_model, output["N_PROMPT_TOKENS"], output["N_GENERATED_TOKENS"]
