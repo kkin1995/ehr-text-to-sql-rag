@@ -9,11 +9,9 @@ from pinecone import Pinecone, ServerlessSpec
 import weaviate
 from dotenv import load_dotenv
 import os
-from utils import check_valid_vector_store, check_and_get_api_keys
-import logging
+from utils import check_valid_vector_store, check_and_get_api_keys, setup_logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 class SchemaParser(TransformComponent):
@@ -100,11 +98,12 @@ def initialize_vector_store(
         vector_store = WeaviateVectorStore(
             weaviate_client=client, index_name=index_name
         )
+        logger.info(f"Created {vector_store_name} vector store")
 
     elif vector_store_name == "pinecone":
         if pinecone_config == None:
             raise ValueError("pinecone_config must be specified if using Pinecone.")
-        elif type(pinecone_config) != dict:
+        elif not isinstance(pinecone_config, dict):
             raise TypeError("pinecone_config must be a dictionary.")
 
         required_pinecone_configs = ["metric", "dimension", "cloud", "region"]
@@ -120,7 +119,7 @@ def initialize_vector_store(
             index_name = "schema-index"
 
         if not pinecone_api_key:
-            logging.error("API keys for Pinecone is required.")
+            logger.error("API keys for Pinecone is required.")
             raise ValueError("API keys for Pinecone is required.")
 
         pc = Pinecone(api_key=pinecone_api_key)
@@ -134,7 +133,7 @@ def initialize_vector_store(
                 spec=ServerlessSpec(cloud=cloud, region=region),
             )
         else:
-            logging.info("Vector Index Already Exists")
+            logger.info("Vector Index Already Exists")
             pc_index = pc.Index(name=index_name)
 
         vector_store = PineconeVectorStore(
@@ -247,7 +246,7 @@ def create_database(
 
 
 if __name__ == "__main__":
-    file_path = "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/context.txt"
+    file_path = "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/context_1.txt"
     vector_store_name = "weaviate"
     pinecone_config = {
         "metric": "cosine",

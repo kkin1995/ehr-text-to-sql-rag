@@ -1,9 +1,9 @@
 from openai import OpenAI
 from query_vector_database import query_database
 import logging
-from utils import check_and_get_api_keys
+from utils import check_and_get_api_keys, setup_logger
 
-logging.basicConfig(level=logging.INFO)
+logger = setup_logger(__name__)
 
 
 class LLMQueryHandler:
@@ -119,8 +119,11 @@ class LLMQueryHandler:
         such as selecting only necessary columns and using appropriate JOINs, and calculating 
         derived values correctly. The SQL query should conform to the SQLite3 standard.
 
-        In any SQL statement that uses WHERE clauses, do not use the equals (=) operator, instead use the LIKE
+        Here are some general SQL guidelines:
+
+        - In any SQL statement that uses WHERE clauses, do not use the equals (=) operator, instead use the LIKE
         command with the wildcard operator.
+        - In any SQL statement that uses JOIN clauses, do not use the the LIKE operator, instead use the equals (=) operator.
 
         Output:
 
@@ -167,7 +170,7 @@ class LLMQueryHandler:
             input_cost += (n_prompt_tokens * 1.50) / 1e6
             output_cost += (n_generated_tokens * 2.00) / 1e6
         else:
-            logging.warning(
+            logger.warning(
                 """
                 Model not yet supported. Currently supported:
                 gpt-4-0125-preview, gpt-4-1106-preview, gpt-4, gpt-4-32k, gpt-3.5-turbo-0125, gpt-3.5-turbo-instruct
@@ -181,6 +184,7 @@ if __name__ == "__main__":
     # How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?
     # """
     user_prompt = "Can you list all past and current medical conditions for a given patient, including dates of diagnosis and resolution, if applicable?"
+    # user_prompt = "How many male patients have diabetes alongwith hypertension?"
     vector_store = "weaviate"
     gpt_model = "gpt-3.5-turbo-0125"
     # gpt_model = "gpt-4-0125-preview"
@@ -192,14 +196,11 @@ if __name__ == "__main__":
         gpt_model, output["N_PROMPT_TOKENS"], output["N_GENERATED_TOKENS"]
     )
 
-    print(f"SQL Query: \n\n {output['SQL_QUERY']}")
-    print("--------------------------------")
+    logger.info(f"SQL Query: \n\n {output['SQL_QUERY']}")
     for idx, schema in enumerate(schemas):
-        print(idx)
-        print("--------------------------------")
-        print(schema)
-    print("--------------------------------")
-    print(f"Cost = ${cost:.5f}")
-    print(f"Model: {output['MODEL']}")
-    print(f"Number of Prompt Tokens: {output['N_PROMPT_TOKENS']}")
-    print(f"Number of Generated Tokens: {output['N_GENERATED_TOKENS']}")
+        logger.info(idx)
+        logger.info(schema)
+    logger.info(f"Cost = ${cost:.5f}")
+    logger.info(f"Model: {output['MODEL']}")
+    logger.info(f"Number of Prompt Tokens: {output['N_PROMPT_TOKENS']}")
+    logger.info(f"Number of Generated Tokens: {output['N_GENERATED_TOKENS']}")
