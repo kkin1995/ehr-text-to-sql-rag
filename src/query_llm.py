@@ -1,6 +1,5 @@
 from openai import OpenAI
 from query_vector_database import query_database
-import logging
 from utils import check_and_get_api_keys, setup_logger
 
 logger = setup_logger(__name__)
@@ -17,10 +16,18 @@ class LLMQueryHandler:
     index_name (str, optional): The name of the index within the vector database.
     """
 
-    def __init__(self, model: str, vector_store: str, index_name: str = None, top_k=5):
+    def __init__(
+        self,
+        model: str,
+        vector_store: str,
+        embed_model: str,
+        index_name: str = None,
+        top_k=5,
+    ):
         self.pinecone_api_key, self.openai_api_key = check_and_get_api_keys()
         self.model = model
         self.vector_store = vector_store
+        self.embed_model = embed_model
         self.index_name = index_name
         self.top_k = top_k
         self.client = OpenAI(api_key=self.openai_api_key)
@@ -40,6 +47,7 @@ class LLMQueryHandler:
         nodes = query_database(
             query=user_prompt,
             vector_store=self.vector_store,
+            embed_model=self.embed_model,
             index_name=self.index_name,
             top_k=self.top_k,
         )
@@ -59,6 +67,7 @@ class LLMQueryHandler:
         ----
         schemas (list[str]): The list of semantic schemas related to the user's query.
         user_prompt (str): The user's query in natural language.
+        context (str): The context prompt to be concatenated with the schemas.
         system_prompt (str): The prompt used in the "system" of the LLM.
 
         Returns:
@@ -159,9 +168,10 @@ if __name__ == "__main__":
     # user_prompt = """
     # How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?
     # """
-    user_prompt = "Can you list all past and current medical conditions for a given patient, including dates of diagnosis and resolution, if applicable?"
-    # user_prompt = "How many male patients have diabetes alongwith hypertension?"
+    # user_prompt = "Can you list all past and current medical conditions for a given patient, including dates of diagnosis and resolution, if applicable?"
+    user_prompt = "How many male patients have diabetes alongwith hypertension?"
     vector_store = "weaviate"
+    embed_model = "text-embedding-3-small"
     gpt_model = "gpt-3.5-turbo-0125"
     # gpt_model = "gpt-4-0125-preview"
 
@@ -170,7 +180,9 @@ if __name__ == "__main__":
     ) as f:
         context_prompt = f.read()
 
-    handler = LLMQueryHandler(model=gpt_model, vector_store=vector_store, top_k=3)
+    handler = LLMQueryHandler(
+        model=gpt_model, vector_store=vector_store, embed_model=embed_model, top_k=3
+    )
     schemas = handler.get_semantic_schemas(user_prompt)
     output = handler.generate_sql_query(schemas, user_prompt, context=context_prompt)
 

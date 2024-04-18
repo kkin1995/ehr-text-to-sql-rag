@@ -49,7 +49,7 @@ logger.info(f"GPT Model: {gpt_model}")
 
 
 def generate_sql_query(
-    user_prompt: str, vector_store: str, gpt_model: str
+    user_prompt: str, vector_store: str, gpt_model: str, embed_model: str
 ) -> str | None:
     """
     Generates an SQL query based on the user's text prompt, vector store, and GPT model.
@@ -65,9 +65,15 @@ def generate_sql_query(
     The generated SQL query as a string, or None if an error occurs.
     """
     try:
-        handler = LLMQueryHandler(model=gpt_model, vector_store=vector_store, top_k=3)
+        with open(
+            "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/context.txt"
+        ) as f:
+            context_prompt = f.read()
+        handler = LLMQueryHandler(gpt_model, vector_store, embed_model, top_k=3)
         schemas = handler.get_semantic_schemas(user_prompt)
-        output = handler.generate_sql_query(schemas, user_prompt)
+        output = handler.generate_sql_query(
+            schemas, user_prompt, context=context_prompt
+        )
         return output["SQL_QUERY"]
     except Exception as e:
         logger.exception(f"Error Occured in LLMQueryHandler. Exiting Program: {e}")
@@ -119,7 +125,8 @@ def execute_sql_on_db(db_path: str, query: str, params=None) -> pd.DataFrame:
         return pd.read_sql_query(query, connection, params)
 
 
-sql_query = generate_sql_query(user_prompt, vector_store, gpt_model)
+embed_model = "text-embedding-3-small"
+sql_query = generate_sql_query(user_prompt, vector_store, gpt_model, embed_model)
 if sql_query is None:
     logger.error("SQL Query Generation Failed. Exiting Program.")
     exit(1)
