@@ -7,6 +7,7 @@ from llama_index.core import VectorStoreIndex
 from llama_index.embeddings.openai import OpenAIEmbedding
 from pinecone import Pinecone, ServerlessSpec
 import weaviate
+import re
 from dotenv import load_dotenv
 import os
 from utils import check_valid_vector_store, check_and_get_api_keys, setup_logger
@@ -20,7 +21,9 @@ class SchemaParser(TransformComponent):
         for doc in docs:
             schemas = doc.text.split("&")
             for schema in schemas:
-                title = schema.split(" ")[2]
+                matched_string = re.search(r"CREATE TABLE (\w+)", schema)
+                if matched_string:
+                    title = matched_string.group(1)
                 processed_doc = Document(text=schema, extra_info={"title": title})
                 processed_docs.append(processed_doc)
         return processed_docs
