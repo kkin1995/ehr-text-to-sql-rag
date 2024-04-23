@@ -183,4 +183,5 @@ notebooks/
 *.db
 weaviate_db/
 *.csv
+*.json
 # End of https://www.toptal.com/developers/gitignore/api/python

@@ -19,6 +19,8 @@ llama-index-vector-stores-pinecone = "^0.1.4"
 weaviate-client = ">=3.26.2,<4.0.0"
 llama-index-vector-stores-weaviate = "^0.1.4"
 llama-index-embeddings-huggingface = "^0.2.0"
+streamlit = "^1.33.0"
+ratelimit = "^2.2.1"
 
 [build-system]
 requires = ["poetry-core"]
