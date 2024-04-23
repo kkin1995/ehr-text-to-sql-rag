@@ -67,8 +67,11 @@ if __name__ == "__main__":
     user_queries = [
         "How many male patients have diabetes alongwith hypertension?",
         "How does the prevalence of specific conditions vary across different age groups and ethnicities within our patient population?",
+        "Can you list all past and current medical conditions for a given patient,including dates of diagnosis and resolution, if applicable?",
+        "For patients with a specific condition (e.g.,asthma), what care plans have been most effective in managing their symptoms, based on patient outcomes and condition resolution rates?",
+        "What are the most commonly prescribed medications for heart disease among our patients, and what has been the average cost for these medications?",
     ]
-    top_k = 3
+    top_k = 5
 
     compile_queries_to_csv(
         user_queries, output_file_path, vector_store, embed_model, top_k
