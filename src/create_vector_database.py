@@ -8,12 +8,12 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from pinecone import Pinecone, ServerlessSpec
 import weaviate
 import re
+import sys
 from dotenv import load_dotenv
 import os
-from utils import check_valid_vector_store, check_and_get_api_keys, setup_logger
+from utils import check_valid_vector_store, check_and_get_api_keys
 
-logger = setup_logger(__name__)
-
+load_dotenv()
 
 class SchemaParser(TransformComponent):
     def __call__(self, docs: list[Document], **kwargs) -> list[Document]:
@@ -27,6 +27,15 @@ class SchemaParser(TransformComponent):
                 processed_doc = Document(text=schema, extra_info={"title": title})
                 processed_docs.append(processed_doc)
         return processed_docs
+
+
+def check_weaviate_vector_store_exists(client: weaviate.Client, vector_store_name: str):
+    schema = client.schema.get()
+    classes = schema.get("classes", [])
+    for cls in classes:
+        if cls["class"] == vector_store_name:
+            return True
+    return False
 
 
 def initialize_vector_store(
@@ -92,16 +101,21 @@ def initialize_vector_store(
     )
     """
 
+    WEAVIATE_HOST = os.environ.get("WEAVIATE_HOST")
+
     if vector_store_name == "weaviate":
         if index_name is None:
             index_name = "SchemaIndex"
 
-        client = weaviate.Client(url="http://localhost:8080")
+        client = weaviate.Client(url=WEAVIATE_HOST)
 
-        vector_store = WeaviateVectorStore(
-            weaviate_client=client, index_name=index_name
-        )
-        logger.info(f"Created {vector_store_name} vector store")
+        if not check_weaviate_vector_store_exists(client, index_name):
+            vector_store = WeaviateVectorStore(
+                weaviate_client=client, index_name=index_name
+            )
+        else:
+            return False
+        # logger.info(f"Created {vector_store_name} vector store")
 
     elif vector_store_name == "pinecone":
         if pinecone_config == None:
@@ -122,7 +136,7 @@ def initialize_vector_store(
             index_name = "schema-index"
 
         if not pinecone_api_key:
-            logger.error("API keys for Pinecone is required.")
+            # logger.error("API keys for Pinecone is required.")
             raise ValueError("API keys for Pinecone is required.")
 
         pc = Pinecone(api_key=pinecone_api_key)
@@ -136,7 +150,7 @@ def initialize_vector_store(
                 spec=ServerlessSpec(cloud=cloud, region=region),
             )
         else:
-            logger.info("Vector Index Already Exists")
+            # logger.info("Vector Index Already Exists")
             pc_index = pc.Index(name=index_name)
 
         vector_store = PineconeVectorStore(
@@ -222,34 +236,41 @@ def create_database(
     vector_store = initialize_vector_store(
         vector_store_name, pinecone_api_key, pinecone_config, index_name
     )
+    if vector_store:
+        # Data Ingestion Into Vector Store
+        pipeline = IngestionPipeline(
+            transformations=[
+                SchemaParser(),
+                OpenAIEmbedding(
+                    model=model,
+                    api_key=openai_api_key,
+                    embed_batch_size=embed_batch_size,
+                ),
+            ],
+            vector_store=vector_store,
+        )
 
-    # Data Ingestion Into Vector Store
-    pipeline = IngestionPipeline(
-        transformations=[
-            SchemaParser(),
-            OpenAIEmbedding(
-                model=model, api_key=openai_api_key, embed_batch_size=embed_batch_size
-            ),
-        ],
-        vector_store=vector_store,
-    )
+        with open(
+            file_path,
+            "r",
+        ) as f:
+            text = f.read()
 
-    with open(
-        file_path,
-        "r",
-    ) as f:
-        text = f.read()
+        initial_docs = [Document(text=text)]
+        docs = pipeline.run(documents=initial_docs)
 
-    initial_docs = [Document(text=text)]
-    docs = pipeline.run(documents=initial_docs)
+        index = VectorStoreIndex.from_vector_store(vector_store)
 
-    index = VectorStoreIndex.from_vector_store(vector_store)
-
-    return index
+        return index
+    else:
+        return None
 
 
 if __name__ == "__main__":
-    file_path = "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/schemas_1.txt"
+    if len(sys.argv) < 2:
+        print("Usage: python3 create_vector_database.py <path_to_schemas_file>")
+        sys.exit(1)
+    file_path = sys.argv[1]
     vector_store_name = "weaviate"
     pinecone_config = {
         "metric": "cosine",

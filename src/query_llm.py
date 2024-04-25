@@ -1,9 +1,6 @@
 from openai import OpenAI
 from query_vector_database import query_database
-from utils import check_and_get_api_keys, setup_logger
-
-logger = setup_logger(__name__)
-
+from utils import check_and_get_api_keys
 
 class LLMQueryHandler:
     """
@@ -154,13 +151,13 @@ class LLMQueryHandler:
         elif model == "gpt-3.5-turbo-instruct":
             input_cost += (n_prompt_tokens * 1.50) / 1e6
             output_cost += (n_generated_tokens * 2.00) / 1e6
-        else:
-            logger.warning(
-                """
-                Model not yet supported. Currently supported:
-                gpt-4-0125-preview, gpt-4-1106-preview, gpt-4, gpt-4-32k, gpt-3.5-turbo-0125, gpt-3.5-turbo-instruct
-                """
-            )
+        # else:
+        #     logger.warning(
+        #         """
+        #         Model not yet supported. Currently supported:
+        #         gpt-4-0125-preview, gpt-4-1106-preview, gpt-4, gpt-4-32k, gpt-3.5-turbo-0125, gpt-3.5-turbo-instruct
+        #         """
+        #     )
         return input_cost + output_cost
 
 
@@ -190,11 +187,11 @@ if __name__ == "__main__":
         gpt_model, output["N_PROMPT_TOKENS"], output["N_GENERATED_TOKENS"]
     )
 
-    logger.info(f"SQL Query: \n\n {output['SQL_QUERY']}")
-    for idx, schema in enumerate(schemas):
-        logger.info(idx)
-        logger.info(schema)
-    logger.info(f"Cost = ${cost:.5f}")
-    logger.info(f"Model: {output['MODEL']}")
-    logger.info(f"Number of Prompt Tokens: {output['N_PROMPT_TOKENS']}")
-    logger.info(f"Number of Generated Tokens: {output['N_GENERATED_TOKENS']}")
+    # logger.info(f"SQL Query: \n\n {output['SQL_QUERY']}")
+    # for idx, schema in enumerate(schemas):
+    #     logger.info(idx)
+    #     logger.info(schema)
+    # logger.info(f"Cost = ${cost:.5f}")
+    # logger.info(f"Model: {output['MODEL']}")
+    # logger.info(f"Number of Prompt Tokens: {output['N_PROMPT_TOKENS']}")
+    # logger.info(f"Number of Generated Tokens: {output['N_GENERATED_TOKENS']}")

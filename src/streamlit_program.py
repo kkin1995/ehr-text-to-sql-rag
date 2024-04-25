@@ -4,11 +4,15 @@ import pandas as pd
 import os
 import re
 import json
+from dotenv import load_dotenv
 
-VECTOR_STORE = "weaviate"
-EMBED_MODEL = "text-embedding-3-small"
-GPT_MODEL = "gpt-3.5-turbo-0125"
-METRIC_FILENAME = "metrics.json"
+load_dotenv()
+
+VECTOR_STORE = os.environ.get("VECTOR_STORE")
+EMBED_MODEL = os.environ.get("EMBED_MODEL")
+GPT_MODEL = os.environ.get("GPT_MODEL")
+METRIC_FILENAME = os.environ.get("METRIC_FILENAME")
+CONTEXT_PROMPT_FILE_PATH = os.environ.get("CONTEXT_PROMPT_FILE_PATH")
 
 
 def get_column_names_from_db(db_path: str, sql_query: str) -> list[str]:
@@ -102,7 +106,8 @@ def read_metric_file():
     if not os.path.exists(METRIC_FILENAME):
         with open(METRIC_FILENAME, "w") as f:
             data = {"total_cost": 0.0, "visitor_count": 0}
-            json.dumps(data, f)
+            json.dump(data, f)
+        return data
     else:
         with open(METRIC_FILENAME, "r") as f:
             data = json.load(f)
@@ -110,9 +115,7 @@ def read_metric_file():
 
 
 try:
-    with open(
-        "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/context.txt"
-    ) as f:
+    with open(CONTEXT_PROMPT_FILE_PATH) as f:
         default_context_prompt = f.read()
 except Exception:
     default_context_prompt = ""
@@ -135,7 +138,7 @@ ask_for_context_prompt = st.radio(
 if ask_for_context_prompt == "Yes" or not default_context_prompt:
     context_prompt = st.text_input("Context prompt:", key="context_prompt")
     if not context_prompt:
-        st.warning("Please enterr the context prompt to proceed.")
+        st.warning("Please enter the context prompt to proceed.")
         st.stop()
 else:
     context_prompt = default_context_prompt
@@ -148,7 +151,7 @@ if user_prompt and user_has_interacted:
     with st.spinner("Processing..."):
 
         try:
-            from query_llm import LLMQueryHandler
+            from src.query_llm import LLMQueryHandler
 
             handler = LLMQueryHandler(
                 model=GPT_MODEL,

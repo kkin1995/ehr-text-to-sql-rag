@@ -5,10 +5,10 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from pinecone import Pinecone
 import weaviate
 from utils import check_and_get_api_keys
-import logging
+from dotenv import load_dotenv
+import os
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+load_dotenv()
 
 
 def query_database(
@@ -74,7 +74,7 @@ def query_database(
             index_name = "schema-index"
 
         if not pinecone_api_key or not openai_api_key:
-            logger.error("Pinecone API Key and OpenAI API Key are required")
+            # logger.error("Pinecone API Key and OpenAI API Key are required")
             raise ValueError("Pinecone API Key and OpenAI API Key are required")
 
         pc = Pinecone(api_key=pinecone_api_key)
@@ -88,7 +88,8 @@ def query_database(
         if index_name is None:
             index_name = "SchemaIndex"
 
-        client = weaviate.Client(url="http://localhost:8080")
+        WEAVIATE_HOST = os.environ.get("WEAVIATE_HOST")
+        client = weaviate.Client(url=WEAVIATE_HOST)
         vector_store = WeaviateVectorStore(
             weaviate_client=client, index_name=index_name
         )
@@ -106,10 +107,10 @@ def query_database(
 if __name__ == "__main__":
     query = "How does the prevalence of specific conditions (e.g., hypertension, diabetes) vary across different age groups and ethnicities within our patient population?"
 
-    try:
-        nodes = query_database(query, "weaviate", "text-embedding-3-small")
-    except Exception as e:
-        logger.error(f"Failed to query vector database: {e}")
+    # try:
+    #     nodes = query_database(query, "weaviate", "text-embedding-3-small")
+    # except Exception as e:
+    #     logger.error(f"Failed to query vector database: {e}")
 
     for node in nodes:
         title = node.metadata["title"]
