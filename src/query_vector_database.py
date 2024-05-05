@@ -4,12 +4,8 @@ from llama_index.core import VectorStoreIndex
 from llama_index.embeddings.openai import OpenAIEmbedding
 from pinecone import Pinecone
 import weaviate
-from utils import check_and_get_api_keys
 from dotenv import load_dotenv
 import os
-
-load_dotenv()
-
 
 def query_database(
     query: str,
@@ -63,7 +59,7 @@ def query_database(
         print(f"Items: {node.get_text()}")
     """
 
-    pinecone_api_key, openai_api_key = check_and_get_api_keys()
+    load_dotenv()
 
     if vector_store not in ["pinecone", "weaviate"]:
         raise ValueError(
@@ -71,13 +67,13 @@ def query_database(
         )
 
     if vector_store == "pinecone":
-
+        pinecone_api_key = os.environ.get("PINECONE_API_KEY")
+        if pinecone_api_key is None:
+            raise ValueError(
+                "PINECONE_API_KEY must be specified as an environment variable."
+            )
         if index_name is None:
             index_name = "schema-index"
-
-        if not pinecone_api_key or not openai_api_key:
-            # logger.error("Pinecone API Key and OpenAI API Key are required")
-            raise ValueError("Pinecone API Key and OpenAI API Key are required")
 
         pc = Pinecone(api_key=pinecone_api_key)
         pc_index = pc.Index(name=index_name)
@@ -95,6 +91,10 @@ def query_database(
         vector_store = WeaviateVectorStore(
             weaviate_client=client, index_name=index_name
         )
+
+    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    if openai_api_key is None:
+        raise ValueError("OPENAI_API_KEY must be specified as an environment variable.")
 
     retriever = VectorStoreIndex.from_vector_store(
         vector_store=vector_store,

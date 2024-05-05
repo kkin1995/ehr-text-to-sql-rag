@@ -21,6 +21,7 @@ llama-index-vector-stores-weaviate = "^0.1.4"
 llama-index-embeddings-huggingface = "^0.2.0"
 streamlit = "^1.33.0"
 ratelimit = "^2.2.1"
+anthropic = "^0.25.7"
 
 [build-system]
 requires = ["poetry-core"]

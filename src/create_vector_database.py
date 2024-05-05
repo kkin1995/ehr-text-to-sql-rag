@@ -8,10 +8,9 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from pinecone import Pinecone, ServerlessSpec
 import weaviate
 import re
-import sys
 from dotenv import load_dotenv
 import os
-from utils import check_valid_vector_store, check_and_get_api_keys
+from utils import check_valid_vector_store
 
 load_dotenv()
 
@@ -231,7 +230,14 @@ def create_database(
             f"{vector_store_name} is  not supported. Currently supported: 'pinecone' or 'weaviate'"
         )
 
-    pinecone_api_key, openai_api_key = check_and_get_api_keys()
+    pinecone_api_key = os.environ.get("PINECONE_API_KEY")
+    if pinecone_api_key is None:
+        raise ValueError(
+            "PINECONE_API_KEY must be specified as an environment variable."
+        )
+    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    if openai_api_key is None:
+        raise ValueError("OPENAI_API_KEY must be specified as an environment variable.")
 
     vector_store = initialize_vector_store(
         vector_store_name, pinecone_api_key, pinecone_config, index_name
@@ -267,9 +273,6 @@ def create_database(
 
 
 if __name__ == "__main__":
-    # if len(sys.argv) < 2:
-    #     print("Usage: python3 create_vector_database.py <path_to_schemas_file>")
-    #     sys.exit(1)
     file_path = "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/schemas_1.txt"
     vector_store_name = "weaviate"
     pinecone_config = {

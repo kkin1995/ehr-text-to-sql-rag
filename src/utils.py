@@ -86,5 +86,8 @@ def check_and_get_api_keys() -> tuple[str, str]:
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if openai_api_key is None:
         raise ValueError("OPENAI_API_KEY must be specified as an environment variable.")
+    claude_api_key = os.environ.get("CLAUDE_API_KEY")
+    if claude_api_key is None:
+        raise ValueError("CLAUDE_API_KEY must be specified as an environment variable.")
 
-    return pinecone_api_key, openai_api_key
+    return pinecone_api_key, openai_api_key, claude_api_key
