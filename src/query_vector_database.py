@@ -15,6 +15,7 @@ def query_database(
     query: str,
     vector_store: str,
     embed_model: str,
+    embed_batch_size: int = 10,
     index_name: str = None,
     top_k: int = 5,
 ):
@@ -31,6 +32,7 @@ def query_database(
     Currently, this function only supports "pinecone" and "weaviate".
     - embed_model (str): The model identifier for the OpenAI API to be used for generating
     embeddings from the text data.
+    - embed_batch_size (int): The number of documents to process in each batch when generating embeddings.
     - index_name (str, optional): The name of the index within the specified vector store
     to query against. If not provided, a default index name will be used based on the
     vector store ("schema-index for Pinecone and "SchemaIndex" for Weaviate).
@@ -96,7 +98,9 @@ def query_database(
 
     retriever = VectorStoreIndex.from_vector_store(
         vector_store=vector_store,
-        embed_model=OpenAIEmbedding(model=embed_model, api_key=openai_api_key),
+        embed_model=OpenAIEmbedding(
+            model=embed_model, embed_batch_size=embed_batch_size, api_key=openai_api_key
+        ),
     ).as_retriever(similarity_top_k=top_k)
 
     nodes = retriever.retrieve(query)
@@ -105,15 +109,18 @@ def query_database(
 
 
 if __name__ == "__main__":
+    from utils import setup_logger
+
+    logger = setup_logger(__name__)
     query = "How does the prevalence of specific conditions (e.g., hypertension, diabetes) vary across different age groups and ethnicities within our patient population?"
 
-    # try:
-    #     nodes = query_database(query, "weaviate", "text-embedding-3-small")
-    # except Exception as e:
-    #     logger.error(f"Failed to query vector database: {e}")
+    try:
+        nodes = query_database(query, "weaviate", "text-embedding-3-small")
+    except Exception as e:
+        logger.error(f"Failed to query vector database: {e}")
 
     for node in nodes:
         title = node.metadata["title"]
-        # print(f"Table: {title}")
-        # print(f"Similarity Score: {node.get_score()}")
+        print(f"Table: {title}")
+        print(f"Similarity Score: {node.get_score()}")
         print(f"Schems: {node.get_text()}")

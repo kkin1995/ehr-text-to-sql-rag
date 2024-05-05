@@ -267,10 +267,10 @@ def create_database(
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python3 create_vector_database.py <path_to_schemas_file>")
-        sys.exit(1)
-    file_path = sys.argv[1]
+    # if len(sys.argv) < 2:
+    #     print("Usage: python3 create_vector_database.py <path_to_schemas_file>")
+    #     sys.exit(1)
+    file_path = "/Users/karankinariwala/Library/CloudStorage/OneDrive-Personal/Medeva LLM Internship/data/schemas_1.txt"
     vector_store_name = "weaviate"
     pinecone_config = {
         "metric": "cosine",

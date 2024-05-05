@@ -34,5 +34,5 @@ def delete_database(index_name: str, vector_store: str = "weaviate"):
 
 
 if __name__ == "__main__":
-    vector_index_to_delete = "SchemaIndex"
+    vector_index_to_delete = "MedicineIndex"
     delete_database(vector_index_to_delete)
